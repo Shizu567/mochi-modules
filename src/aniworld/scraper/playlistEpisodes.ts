@@ -1,17 +1,16 @@
 import { PlaylistGroup, PlaylistGroupVariant, PlaylistItem } from "@mochiapp/js";
-import AniWorld from "..";
 
-export function scrapeGroups($: cheerio.Root) {
+// Function to scrape episode groups from Dramacool
+export function scrapeGroups($: cheerio.Root): PlaylistGroup[] {
   let selectedGroupId: string;
 
-  const groups: PlaylistGroup[] = $("#stream > ul:first > li > a")
+  const groups: PlaylistGroup[] = $(".episode-list > li > a")
     .toArray()
     .map((a, idx) => {
       const id = $(a)
         .attr("href")!
         .split("/")
-        .filter((x) => x !== "")
-        .at(-1)!;
+        .pop()!;
 
       const title = $(a).attr("title") || $(a).text();
 
@@ -23,48 +22,29 @@ export function scrapeGroups($: cheerio.Root) {
         altTitle: title,
         variants: id === selectedGroupId ? scrapeVariants($) : undefined,
       } satisfies PlaylistGroup;
-    })
-    .sort((a, b) => {
-      // active group first
-      if (a.id === selectedGroupId) return -1;
-      if (b.id === selectedGroupId) return 1;
-
-      // movies after seasons
-      if (a.id === "filme") return 1;
-      if (b.id === "filme") return -1;
-
-      return 0;
     });
 
   return groups;
 }
 
+// Function to scrape episode variants (like subtitles or dubs)
 export function scrapeVariants($: cheerio.Root): PlaylistGroupVariant[] {
-  return $(".editFunctions:first .flag")
+  return $(".variant-options > img")
     .toArray()
     .map((img) => {
       const id = $(img)
         .attr("src")!
-        .match(/\/([^./]+).svg/)![1];
+        .match(/\/([^./]+).png/)![1];
 
-      const name = AniWorld.LANGUAGES.get(id) || id;
+      const name = id;  // Or map to more readable names
 
-      return { id, name };
-    })
-    .sort((a, b) => {
-      // sub first
-      if (a.id === "japanese-german") return -1;
-      if (b.id === "japanese-german") return 1;
-      return 0;
-    })
-    .map(({ id, name }) => {
       return {
         id,
         title: name,
         pagings: [
           {
             id: "all-episodes",
-            title: "Alle Episoden",
+            title: "All Episodes",
             items: scrapeEpisodes($, id),
           },
         ],
@@ -72,37 +52,27 @@ export function scrapeVariants($: cheerio.Root): PlaylistGroupVariant[] {
     });
 }
 
+// Function to scrape episodes
 export function scrapeEpisodes($: cheerio.Root, variantId: string): PlaylistItem[] {
-  const episodes = $("table.seasonEpisodesList > tbody > tr")
+  return $(".episode-list > li")
     .toArray()
-    .map((tr, idx) => {
-      const id = $(tr)
+    .map((li, idx) => {
+      const id = $(li)
         .find("a")
         .attr("href")!
         .split("/")
-        .filter((x) => x !== "")
-        .slice(-2)
-        .join("/");
+        .pop()!;
 
-      const title = $(tr).find("td.seasonEpisodeTitle > a").text().trim();
-
-      let number: number;
-      try {
-        number = parseInt($(tr).attr("data-episode-season-id")!);
-      } catch {
-        number = idx;
-      }
+      const title = $(li).find(".episode-title").text().trim();
 
       return {
         id: `${id}/${variantId}`,
         title,
-        description: undefined,
-        thumbnail: undefined,
-        number,
-        timestamp: undefined,
+        description: $(li).find(".episode-description").text(),
+        thumbnail: $(li).find("img").attr("src"),
+        number: idx,
+        timestamp: new Date().getTime(),  // Or scrape the actual timestamp if available
         tags: [],
       } satisfies PlaylistItem;
     });
-
-  return episodes;
 }
