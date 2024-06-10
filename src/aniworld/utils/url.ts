@@ -1,5 +1,5 @@
 // url example:
-// https://aniworld.to/anime/stream/neon-genesis-evangelion/staffel-1/episode-1/
+// https://asianc.to/drama/stream/drama-title/season-1/episode-1/
 
 export type UrlInfo = {
   id: string;
@@ -9,7 +9,7 @@ export type UrlInfo = {
 
 export const getUrlInfo = (url: string): UrlInfo => {
   const match = url.match(
-    /^(?:https:\/\/aniworld\.to)?\/anime\/stream\/([^/]+)\/?([^/]+)?\/?([^/]+)?$/
+    /^(?:https:\/\/asianc\.to)?\/drama\/stream\/([^/]+)\/?([^/]+)?\/?([^/]+)?$/
   );
   if (!match) throw new Error(`Invalid url: ${url}`);
 
