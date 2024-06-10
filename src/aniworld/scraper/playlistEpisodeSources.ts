@@ -1,13 +1,13 @@
 export function scrapeAvailableLanguages($: cheerio.Root) {
-  return $(".changeLanguageBox > img")
+  return $(".language-options > img")
     .toArray()
     .map((img) => {
-      const id = $(img)
+      const langId = $(img)
         .attr("src")!
-        .match(/\/([^./]+).svg/)![1];
+        .match(/\/([^./]+).png/)![1];
 
-      const langKey = $(img).attr("data-lang-key")!;
+      const langKey = $(img).attr("data-lang")!;
 
-      return { id, langKey };
+      return { id: langId, langKey };
     });
 }
