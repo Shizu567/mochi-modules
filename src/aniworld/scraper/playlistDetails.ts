@@ -1,33 +1,26 @@
 import { sanitizeHtml } from "../utils";
+import cheerio from "cheerio";
 
+// Function to scrape the synopsis from Dramacool
 export function scrapeSynopsis($: cheerio.Root) {
-  const description = sanitizeHtml($("p.seri_des").attr("data-full-description") ?? "");
+  const description = sanitizeHtml($(".description").text() ?? "");
 
-  const cast = $("div.cast > ul > li")
+  const cast = $(".cast-list > li")
     .toArray()
     .map((li) => {
-      const title = $(li).find("strong").text().replace(":", "");
-      const values = $(li)
-        .find("ul > li span")
-        .toArray()
-        .map((value) => $(value).text());
+      const actorName = $(li).find(".actor-name").text();
+      const characterName = $(li).find(".character-name").text();
 
-      if (values.length === 0) {
-        return undefined;
-      }
-
-      return `# ${title}\n${values.join(", ")}`;
+      return `${actorName} as ${characterName}`;
     })
-    .filter((cast) => cast !== undefined);
+    .join(", ");
 
-  return `${description}\n\n\n${cast.join("\n\n")}`;
+  return `${description}\n\nCast: ${cast}`;
 }
 
+// Function to scrape the genres from Dramacool
 export function scrapeGenres($: cheerio.Root) {
-  const blacklist = ["GerSub", "GerDub", "Ger", "EngSub", "EngDub", "Eng"];
-
-  return $("div.genres a")
+  return $(".genre-list a")
     .toArray()
-    .map((genre) => $(genre).text())
-    .filter((genre) => !blacklist.includes(genre));
+    .map((genre) => $(genre).text());
 }
